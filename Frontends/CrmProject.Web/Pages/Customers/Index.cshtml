@@ -1,0 +1,143 @@
+﻿@page
+@model CrmProject.Web.Pages.Customers.IndexModel
+@using CrmProject.Application.ViewModels
+@{
+    ViewData["Title"] = "Customer Management";
+}
+
+<div class="container-fluid">
+    <h2 class="mb-4">Customer Management</h2>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label asp-for="Filter.NameFilter">Name</label>
+                            <input asp-for="Filter.NameFilter" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label asp-for="Filter.RegionFilter">Region</label>
+                            <select asp-for="Filter.RegionFilter" class="form-control">
+                                <option value="">All Regions</option>
+                                <option value="North America">North America</option>
+                                <option value="South America">South America</option>
+                                <option value="Europe">Europe</option>
+                                <option value="Asia">Asia</option>
+                                <option value="Africa">Africa</option>
+                                <option value="Oceania">Oceania</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label asp-for="Filter.FromDate">From Date</label>
+                            <input asp-for="Filter.FromDate" type="date" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label>&nbsp;</label>
+                            <button type="submit" class="btn btn-primary w-100">Search</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (User.IsInRole("Admin"))
+    {
+        <div class="mb-3">
+            <a asp-page="Create" class="btn btn-success">Add New Customer</a>
+        </div>
+    }
+
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Region</th>
+                    <th>Registration Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var customer in Model.Customers)
+                {
+                    <tr>
+                        <td>@customer.FullName</td>
+                        <td>@customer.Email</td>
+                        <td>@customer.Region</td>
+                        <td>@customer.RegistrationDate.ToShortDateString()</td>
+                        <td>
+                            <a asp-page="./Details" asp-route-id="@customer.Id"
+                               class="btn btn-info btn-sm">Details</a>
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <a asp-page="./Edit" asp-route-id="@customer.Id"
+                                   class="btn btn-primary btn-sm">Edit</a>
+                                <button type="button" class="btn btn-danger btn-sm"
+                                        onclick="deleteCustomer(@customer.Id)">
+                                    Delete
+                                </button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <nav>
+        <ul class="pagination">
+            @for (var i = 1; i <= Model.TotalPages; i++)
+            {
+                <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                    <a class="page-link" asp-page="./Index"
+                       asp-route-page="@i"
+                       asp-route-nameFilter="@Model.Filter.NameFilter"
+                       asp-route-regionFilter="@Model.Filter.RegionFilter"
+                       asp-route-fromDate="@Model.Filter.FromDate">@i</a>
+                </li>
+            }
+        </ul>
+    </nav>
+</div>
+
+@section Scripts {
+    <script>
+        function deleteCustomer(id) {
+            if (confirm('Are you sure you want to delete this customer?')) {
+                fetch(`/api/customers/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                }).then(response => {
+                    if (response.ok) {
+                        window.location.reload();
+                    } else {
+                        alert('Error deleting customer');
+                    }
+                }).catch(error => {
+                    console.error('Error:', error);
+                    alert('Error deleting customer');
+                });
+            }
+        }
+    </script>
+}
